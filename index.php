@@ -43,27 +43,14 @@ class wechatCallbackapiTest
 							<MsgType><![CDATA[%s]]></MsgType>
 							<Content><![CDATA[%s]]></Content>
 							<FuncFlag>0</FuncFlag>
-							</xml>";             
-				if(!empty( $keyword ))
+							</xml>";  
+       
+				if(!empty($keyword))
                 {
-              		$msgType = "text";
-              		switch($keyword)
-              		{
-              			case "zhangbailong";
-              			$contentStr ="传送中的按个人";
-              			break;
-              			case "傻逼";
-              			$contentStr ="你才是傻逼！";
-              			break;
-              			case "SB";
-              			$contentStr ="你才是SB！";
-              			break;
-              			default;
-              			$contentStr =$fromUsername."，欢迎来到zhangbailong的微信平台!";             			
-              				    			
-              		}
-                	$resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType, $contentStr);
-                	echo $resultStr;
+              		$msgType = "text";       		
+              		$contentStr=wechatCallbackapiTest::tulingRebot($keyword,$fromUsername);       	
+              		$resultStr = sprintf($textTpl, $fromUsername, $toUsername, $time, $msgType,$contentStr);
+              		echo $resultStr;
                 }else{
                 	echo "Input something...";
                 }
@@ -74,21 +61,40 @@ class wechatCallbackapiTest
         }
     }
     
-	/**
-	 * 检查是否为开发者
-	 * Enter description here ...
-	 * @throws Exception
-	 */
+    /**
+     * 调用小黄鸡API
+     * Enter description here ...
+     */
+    public function tulingRebot($keyword,$fromUsername)
+    {
+    	$keyword=urldecode(urldecode($keyword)); //用户输入的关键字
+    	$api_key="fa96b752bc518c2cfa6ff6980bf053a4"; //我的图灵机器人API key    	
+    	$api_address="http://www.tuling123.com/openapi/api?key=KEY&info=KEYWORD&userid=USERID"; //图灵机器人API地址
+    	$api_address=str_replace('KEY',$api_key,$api_address);
+    	$api_address=str_replace('KEYWORD',$keyword,$api_address);
+    	$api_address=str_replace('USERID',$fromUsername,$api_address);
+    	/*
+    	$ch = curl_init(); 
+		$timeout = 5; curl_setopt ($ch, CURLOPT_URL,$api_address);
+		curl_setopt ($ch, CURLOPT_RETURNTRANSFER, 1); 
+		curl_setopt ($ch, CURLOPT_CONNECTTIMEOUT, $timeout); 
+		$file_contents = curl_exec($ch);
+		curl_close($ch); 
+		*/
+        $array=json_decode(file_get_contents($api_address),true);   
+    	return $array['text'];	
+    }
+		
 	private function checkSignature()
 	{
-        //判断是否定义TOKEN 签名
+        // you must define TOKEN by yourself
         if (!defined("TOKEN")) {
             throw new Exception('TOKEN is not defined!');
         }
         
-        $signature = $_GET["signature"]; //获取微信加密签名
-        $timestamp = $_GET["timestamp"]; //时间戳
-        $nonce = $_GET["nonce"];//随机数
+        $signature = $_GET["signature"];
+        $timestamp = $_GET["timestamp"];
+        $nonce = $_GET["nonce"];
         		
 		$token = TOKEN;
 		$tmpArr = array($token, $timestamp, $nonce);
@@ -96,6 +102,7 @@ class wechatCallbackapiTest
 		sort($tmpArr, SORT_STRING);
 		$tmpStr = implode( $tmpArr );
 		$tmpStr = sha1( $tmpStr );
+		
 		if( $tmpStr == $signature ){
 			return true;
 		}else{
